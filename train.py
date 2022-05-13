@@ -12,13 +12,30 @@ from discriminator_model import Discriminator
 from generator_model import Generator
 import os
 from datetime import datetime
+import pickle
 
 def train_fn(disc_H, disc_Z, gen_Z, gen_H, loader, opt_disc, opt_gen, l1, mse, d_scaler, g_scaler, epochString):
     H_reals = 0
     H_fakes = 0
+
+    D_H_Loss_avg = 0
+    D_Z_Loss_avg = 0
+
+    cycle_Z_loss_avg = 0
+    cycle_H_loss_avg = 0
+
+    identity_Z_loss_avg = 0
+    identity_H_loss_avg = 0
+
+    G_Z_loss_avg = 0
+    G_H_loss_avg = 0
+    G_total_loss_avg = 0
+
     loop = tqdm(loader, leave=True)
+    iterationCount = 0
 
     for idx, (zebra, horse) in enumerate(loop):
+        iterationCount = idx
         zebra = zebra.to(config.DEVICE)
         horse = horse.to(config.DEVICE)
 
@@ -76,14 +93,30 @@ def train_fn(disc_H, disc_Z, gen_Z, gen_H, loader, opt_disc, opt_gen, l1, mse, d
             identity_horse_loss = l1(horse, identity_horse)
 
             # add all togethor
-            G_loss = (
-                loss_G_Z
-                + loss_G_H
+            G_Z_loss = (loss_G_Z
                 + cycle_zebra_loss * config.LAMBDA_CYCLE
+                + identity_zebra_loss * config.LAMBDA_IDENTITY)
+
+            G_H_loss = (
+                loss_G_H
                 + cycle_horse_loss * config.LAMBDA_CYCLE
                 + identity_horse_loss * config.LAMBDA_IDENTITY
-                + identity_zebra_loss * config.LAMBDA_IDENTITY
             )
+
+            G_loss = G_Z_loss + G_H_loss
+
+            D_H_Loss_avg += D_H_loss
+            D_Z_Loss_avg += D_Z_loss
+
+            cycle_Z_loss_avg += cycle_zebra_loss
+            cycle_H_loss_avg += cycle_horse_loss
+
+            identity_Z_loss_avg += identity_zebra_loss
+            identity_H_loss_avg += identity_horse_loss
+
+            G_Z_loss_avg += G_Z_loss
+            G_H_loss_avg += G_H_loss
+            G_total_loss_avg += G_loss
 
         opt_gen.zero_grad()
         g_scaler.scale(G_loss).backward()
@@ -104,11 +137,37 @@ def train_fn(disc_H, disc_Z, gen_Z, gen_H, loader, opt_disc, opt_gen, l1, mse, d
 
         loop.set_postfix(H_real=H_reals/(idx+1), H_fake=H_fakes/(idx+1))
 
+    D_H_Loss_avg /= iterationCount
+    D_Z_Loss_avg /= iterationCount
 
+    cycle_Z_loss_avg /= iterationCount
+    cycle_H_loss_avg /= iterationCount
+
+    identity_Z_loss_avg /= iterationCount
+    identity_H_loss_avg /= iterationCount
+
+    G_Z_loss_avg /= iterationCount
+    G_H_loss_avg /= iterationCount
+    G_total_loss_avg /= iterationCount
+
+    return [D_H_Loss_avg, D_Z_Loss_avg, cycle_Z_loss_avg, cycle_H_loss_avg, identity_Z_loss_avg, identity_H_loss_avg, G_Z_loss_avg, G_H_loss_avg, G_total_loss_avg]
+
+def StoreLosses(filename, losses):
+    with open(filename, 'wb') as f:
+        pickle.dump(losses, f)
+
+def LoadLosses(filename):
+    if filename in os.listdir(os.getcwd()):
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
+    else:
+        return [[], [],[],[],[],[],[],[], []]
+    
 
 def main():
     startEpoch = 0
     dateString = datetime.now().strftime("%m%d%H")
+    losses = LoadLosses("losses.pickle")
 
     disc_H = Discriminator(in_channels=3).to(config.DEVICE)
     disc_Z = Discriminator(in_channels=3).to(config.DEVICE)
@@ -168,7 +227,12 @@ def main():
     for epoch in range(config.NUM_EPOCHS):
         epochString = f"Date{dateString}Epoch{startEpoch + epoch}"
 
-        train_fn(disc_H, disc_Z, gen_Z, gen_H, loader, opt_disc, opt_gen, L1, mse, d_scaler, g_scaler, epochString=epochString)
+        epochLosses = train_fn(disc_H, disc_Z, gen_Z, gen_H, loader, opt_disc, opt_gen, L1, mse, d_scaler, g_scaler, epochString=epochString)
+
+        for idx, loss in enumerate(losses):
+            loss.append(epochLosses[idx])
+
+        StoreLosses("losses.pickle", losses)
 
         if config.SAVE_MODEL:
             save_checkpoint(gen_H, opt_gen, filename=config.CHECKPOINT_GEN_H)
