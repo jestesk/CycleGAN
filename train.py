@@ -91,9 +91,13 @@ def train_fn(disc_H, disc_Z, gen_Z, gen_H, loader, opt_disc, opt_gen, l1, mse, d
         g_scaler.update()
 
         if idx % 200 == 0:
-            savePath = "./ProgressImages/"+epochString
-            if not os.path.isdir(savePath):
-                os.mkdir(savePath)
+            savePath = "ProgressImages"
+            if not os.path.isdir(f"{savePath}"):
+                os.mkdir(f"{savePath}")
+
+            savePath = "ProgressImages/"+epochString
+            if not os.path.isdir(f"{savePath}"):
+                os.mkdir(f"{savePath}")
 
             save_image(fake_horse*0.5+0.5, f"{savePath}/horse_{idx}.png")
             save_image(fake_zebra*0.5+0.5, f"{savePath}/zebra_{idx}.png")
