@@ -3,3 +3,4 @@ ProgressImages/
 *.tar
 __pycache__
 *.pickle
+lpips_fakes/
