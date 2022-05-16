@@ -18,14 +18,14 @@ from generator_model import Generator
 from PIL import Image as im
 
 
-model_path_gen_H = 'genh.pth.tar'
-model_path_gen_Z = 'genz.pth.tar'
+model_path_gen_H = 'LpipsFolder/genh.pth.tar'
+model_path_gen_Z = 'LpipsFolder/genz.pth.tar'
 
-path_where_the_images_are_H = 'data/testA'
-path_where_the_images_are_Z = 'data/testA'
+path_where_the_images_are_H = "data/testA"
+path_where_the_images_are_Z = "data/testB"
 
-save_fake_horses_path = 'lpips_fakes/fake_horses'
-save_fake_zebras_path = 'lpips_fakes/fake_zebras'
+save_fake_horses_path = 'LpipsFolder/fakes/fake_horses'
+save_fake_zebras_path =  'LpipsFolder/fakes/fake_zebras'
 
 
 gen_H = Generator(img_channels=3, num_residuals=9).to(config.DEVICE)
@@ -50,14 +50,14 @@ load_checkpoint(
         )
 
 dataset = HorseZebraDataset(
-        root_horse="data/testA", root_zebra="data/testB", transform=config.transforms
+        root_horse=path_where_the_images_are_H, root_zebra=path_where_the_images_are_Z, transform=config.transforms
     )
 
 
 loader = DataLoader(
         dataset,
         batch_size=1,
-        shuffle=True,
+        shuffle=False,
         num_workers=config.NUM_WORKERS,
         pin_memory=True
     )
@@ -75,9 +75,9 @@ for idx, (zebra, horse) in enumerate(loader):
         horse = horse.to(config.DEVICE)
         
         fake_horse = gen_H(zebra).cpu()
-        fake_zebra = gen_H(horse).cpu()
-        save_image(fake_horse*0.5+0.5, f"{save_fake_horses_path}/horse_{idx}.png")
-        save_image(fake_zebra*0.5+0.5, f"{save_fake_zebras_path}/zebra_{idx}.png")
+        fake_zebra = gen_Z(horse).cpu()
+        save_image(fake_horse*0.5+0.5, f"{save_fake_horses_path}/fake_horse_{idx}.png")
+        save_image(fake_zebra*0.5+0.5, f"{save_fake_zebras_path}/fake_zebra_{idx}.png")
         
         
         
