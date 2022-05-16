@@ -36,6 +36,7 @@ startEpochIndex = 0
 # Total loss
 PlotLoss(-1)
 plt.title(lossTitles[-1])
+plt.savefig("Total loss.png")
 
 # Horse D vs G loss
 plt.figure()
