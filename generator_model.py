@@ -8,9 +8,9 @@ class ConvBlock(nn.Module):
             nn.Conv2d(in_channels, out_channels, padding_mode="reflect", **kwargs)
             if down
             else nn.ConvTranspose2d(in_channels, out_channels, **kwargs),
-            nn.InstanceNorm2d(out_channels),
-            nn.Dropout() if use_dropout else nn.Identity(),
-            nn.ReLU(inplace=True) if use_act else nn.Identity()
+            nn.InstanceNorm2d(out_channels), # TODO what is this
+            nn.Dropout() if use_dropout else nn.Identity(), # TODO enable Dropout
+            nn.ReLU(inplace=True) if use_act else nn.Identity() #TODO what is use act
         )
 
     def forward(self, x):
