@@ -48,8 +48,8 @@ def train_fn(disc_H, disc_Z, gen_Z, gen_H, loader, opt_disc, opt_gen, l1, mse, d
             H_fakes += D_H_fake.mean().item()
 
             
-            D_H_real_ground_truth = torch.zeros_like(D_H_real) if torch.rand(1).item() > 0.9 else 0.7 + torch.rand_like(D_H_real) * (1.2 - 0.7) #Flip labels 10% of the time
-            D_H_fake_ground_truth = torch.ones_like(D_H_fake) if torch.rand(1).item() > 0.9 else torch.rand_like(D_H_fake) * 0.3
+            D_H_real_ground_truth = torch.ones_like(D_H_real)
+            D_H_fake_ground_truth = torch.zeros_like(D_H_fake)
             D_H_real_loss = mse(D_H_real, D_H_real_ground_truth)
             D_H_fake_loss = mse(D_H_fake, D_H_fake_ground_truth)
             D_H_loss = D_H_real_loss + D_H_fake_loss
@@ -58,8 +58,8 @@ def train_fn(disc_H, disc_Z, gen_Z, gen_H, loader, opt_disc, opt_gen, l1, mse, d
             D_Z_real = disc_Z(zebra)
             D_Z_fake = disc_Z(fake_zebra.detach())
 
-            D_Z_real_ground_truth = torch.zeros_like(D_Z_real) if torch.rand(1).item() > 0.9 else 0.7 + torch.rand_like(D_Z_real) * (1.2 - 0.7)
-            D_Z_fake_ground_truth = torch.ones_like(D_Z_fake) if torch.rand(1).item() > 0.9 else torch.rand_like(D_Z_fake) * 0.3
+            D_Z_real_ground_truth = torch.ones_like(D_Z_real)
+            D_Z_fake_ground_truth = torch.zeros_like(D_Z_fake)
             D_Z_real_loss = mse(D_Z_real, D_Z_real_ground_truth)
             D_Z_fake_loss = mse(D_Z_fake, D_Z_fake_ground_truth)
             D_Z_loss = D_Z_real_loss + D_Z_fake_loss
